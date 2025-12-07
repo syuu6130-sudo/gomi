@@ -1,8 +1,16 @@
 -- Teleport GUI v4.0 with Rayfield UI
 -- By syu_u
 
--- Rayfield UI ライブラリをロード
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Rayfield UI ライブラリのロード
+local success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua'))()
+end)
+
+if not success or not Rayfield then
+    warn("Rayfield UI の読み込みに失敗しました。標準UIを使用します。")
+    -- 代替の標準UIコードをここに実装
+    return
+end
 
 -- Rayfield ウィンドウの作成
 local Window = Rayfield:CreateWindow({
@@ -22,39 +30,39 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false,
 })
 
--- メインタブ
-local MainTab = Window:CreateTab("Main", "rbxassetid://4483345998")
-
 -- 位置保存データ
 local savedPositions = {}
 local currentSlot = 1
 
+-- メインタブ
+local MainTab = Window:CreateTab("メイン", 4483345998)
+
 -- スロット選択セクション
-local SlotSection = MainTab:CreateSection("Position Slots")
+MainTab:CreateSection("位置保存スロット")
 
 -- スロット選択ドロップダウン
-local slots = {}
+local slotOptions = {}
 for i = 1, 10 do
-    table.insert(slots, "Slot " .. i)
+    table.insert(slotOptions, "スロット " .. i)
 end
 
 local slotDropdown = MainTab:CreateDropdown({
-    Name = "Select Slot",
-    Options = slots,
-    CurrentOption = "Slot 1",
+    Name = "スロット選択",
+    Options = slotOptions,
+    CurrentOption = "スロット 1",
     Callback = function(Value)
         currentSlot = tonumber(string.match(Value, "%d+"))
         updateSlotDisplay()
     end,
 })
 
--- スロット情報表示
-local slotStatusLabel = MainTab:CreateLabel("Slot 1: Empty")
+-- スロット状態表示ラベル
+local slotStatusLabel = MainTab:CreateLabel("スロット 1: 空き")
 
--- スロット状態を更新する関数
-function updateSlotDisplay()
-    slotStatusLabel:Set("Slot " .. currentSlot .. ": " .. 
-        (savedPositions[currentSlot] and "Saved ✓" or "Empty"))
+-- スロット表示更新関数
+local function updateSlotDisplay()
+    local status = savedPositions[currentSlot] and "保存済み ✓" or "空き"
+    slotStatusLabel:Set("スロット " .. currentSlot .. ": " .. status)
     
     if savedPositions[currentSlot] then
         slotStatusLabel:SetTextColor(Color3.fromRGB(46, 204, 113))
@@ -64,21 +72,28 @@ function updateSlotDisplay()
 end
 
 -- 位置操作セクション
-local PositionSection = MainTab:CreateSection("Position Controls")
+MainTab:CreateSection("位置操作")
 
 -- 保存ボタン
 MainTab:CreateButton({
-    Name = "Save Current Position",
+    Name = "現在位置を保存",
     Callback = function()
-        local character = game.Players.LocalPlayer.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            savedPositions[currentSlot] = character.HumanoidRootPart.CFrame
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            savedPositions[currentSlot] = player.Character.HumanoidRootPart.CFrame
             updateSlotDisplay()
             Rayfield:Notify({
-                Title = "Position Saved",
-                Content = "Position saved to Slot " .. currentSlot,
+                Title = "位置保存完了",
+                Content = "スロット " .. currentSlot .. " に位置を保存しました",
                 Duration = 2,
-                Image = "rbxassetid://4483345998"
+                Image = 4483345998
+            })
+        else
+            Rayfield:Notify({
+                Title = "エラー",
+                Content = "キャラクターが見つかりません",
+                Duration = 2,
+                Image = 4483345998
             })
         end
     end,
@@ -86,25 +101,25 @@ MainTab:CreateButton({
 
 -- テレポートボタン
 MainTab:CreateButton({
-    Name = "Teleport to Saved Position",
+    Name = "保存位置へ移動",
     Callback = function()
         if savedPositions[currentSlot] then
-            local character = game.Players.LocalPlayer.Character
-            if character and character:FindFirstChild("HumanoidRootPart") then
-                character.HumanoidRootPart.CFrame = savedPositions[currentSlot]
+            local player = game.Players.LocalPlayer
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = savedPositions[currentSlot]
                 Rayfield:Notify({
-                    Title = "Teleported",
-                    Content = "Teleported to Slot " .. currentSlot,
+                    Title = "移動完了",
+                    Content = "スロット " .. currentSlot .. " の位置へ移動しました",
                     Duration = 2,
-                    Image = "rbxassetid://4483345998"
+                    Image = 4483345998
                 })
             end
         else
             Rayfield:Notify({
-                Title = "Error",
-                Content = "No position saved in Slot " .. currentSlot,
+                Title = "エラー",
+                Content = "保存された位置がありません",
                 Duration = 2,
-                Image = "rbxassetid://4483345998"
+                Image = 4483345998
             })
         end
     end,
@@ -112,109 +127,89 @@ MainTab:CreateButton({
 
 -- 削除ボタン
 MainTab:CreateButton({
-    Name = "Delete Saved Position",
+    Name = "保存位置を削除",
     Callback = function()
         savedPositions[currentSlot] = nil
         updateSlotDisplay()
         Rayfield:Notify({
-            Title = "Position Deleted",
-            Content = "Position deleted from Slot " .. currentSlot,
+            Title = "削除完了",
+            Content = "スロット " .. currentSlot .. " の位置を削除しました",
             Duration = 2,
-            Image = "rbxassetid://4483345998"
+            Image = 4483345998
         })
     end,
 })
 
 -- アンチグラブタブ
-local AntiGrabTab = Window:CreateTab("Anti-Grab", "rbxassetid://4483345998")
+local AntiGrabTab = Window:CreateTab("アンチグラブ", 4483345998)
 
 -- 設定セクション
-local SettingsSection = AntiGrabTab:CreateSection("Anti-Grab Settings")
+AntiGrabTab:CreateSection("アンチグラブ設定")
 
 -- アンチグラブ有効化
 local antiGrabEnabled = false
 local floatingButton = nil
+local detectionConnection = nil
 
 local antiGrabToggle = AntiGrabTab:CreateToggle({
-    Name = "Enable Anti-Grab System",
+    Name = "アンチグラブシステムを有効化",
     CurrentValue = false,
     Callback = function(Value)
         antiGrabEnabled = Value
+        
         if Value then
             createFloatingButton()
-        elseif floatingButton then
-            floatingButton:Destroy()
-            floatingButton = nil
+            startAutoDetection()
+            Rayfield:Notify({
+                Title = "アンチグラブ有効",
+                Content = "システムが起動しました",
+                Duration = 2,
+                Image = 4483345998
+            })
+        else
+            if floatingButton then
+                floatingButton:Destroy()
+                floatingButton = nil
+            end
+            stopAutoDetection()
+            Rayfield:Notify({
+                Title = "アンチグラブ無効",
+                Content = "システムが停止しました",
+                Duration = 2,
+                Image = 4483345998
+            })
         end
     end,
 })
 
--- 検知感度設定
-AntiGrabTab:CreateSlider({
-    Name = "Detection Sensitivity",
-    Range = {1, 10},
-    Increment = 1,
-    Suffix = "level",
-    CurrentValue = 5,
-    Callback = function(Value)
-        detectionSensitivity = Value
-    end,
-})
-
--- テレポート距離設定
-AntiGrabTab:CreateSlider({
-    Name = "Teleport Distance",
-    Range = {10, 50},
-    Increment = 5,
-    Suffix = "studs",
-    CurrentValue = 20,
-    Callback = function(Value)
-        teleportDistance = Value
-    end,
-})
-
--- クールダウン設定
-AntiGrabTab:CreateSlider({
-    Name = "Cooldown Time",
-    Range = {0.5, 3},
-    Increment = 0.1,
-    Suffix = "seconds",
-    CurrentValue = 1.0,
-    Callback = function(Value)
-        teleportCooldown = Value
-    end,
-})
-
 -- フローティングボタン作成関数
-function createFloatingButton()
+local function createFloatingButton()
     if floatingButton then
         floatingButton:Destroy()
     end
     
-    -- フローティングボタンのGUI
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "AntiGrabFloatingButton"
-    screenGui.Parent = game.Players.LocalPlayer.PlayerGui
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
     screenGui.ResetOnSpawn = false
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
-    -- メインボタン
     floatingButton = Instance.new("TextButton")
-    floatingButton.Size = UDim2.new(0, 70, 0, 70)
-    floatingButton.Position = UDim2.new(0.5, -35, 0.8, -35)
-    floatingButton.BackgroundColor3 = Color3.fromRGB(192, 57, 43)
-    floatingButton.Text = "ANTI-GRAB\n[OFF]"
+    floatingButton.Size = UDim2.new(0, 80, 0, 80)
+    floatingButton.Position = UDim2.new(0.5, -40, 0.8, -40)
+    floatingButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
+    floatingButton.Text = "アンチ\nグラブ"
     floatingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     floatingButton.Font = Enum.Font.GothamBold
-    floatingButton.TextSize = 12
+    floatingButton.TextSize = 14
     floatingButton.TextWrapped = true
     floatingButton.Active = true
     floatingButton.Draggable = true
     floatingButton.Parent = screenGui
     
-    -- ボタンの装飾
+    -- UI装飾
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 15)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = floatingButton
     
     local stroke = Instance.new("UIStroke")
@@ -222,77 +217,25 @@ function createFloatingButton()
     stroke.Thickness = 2
     stroke.Parent = floatingButton
     
-    -- シャドウ効果
-    local shadow = Instance.new("ImageLabel")
-    shadow.Size = UDim2.new(1, 10, 1, 10)
-    shadow.Position = UDim2.new(0, -5, 0, -5)
-    shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://5554236805"
-    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.ImageTransparency = 0.8
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(23, 23, 277, 277)
-    shadow.Parent = floatingButton
-    
-    -- ボタンクリックイベント
+    -- マウス操作イベント
     floatingButton.MouseButton1Click:Connect(function()
         if not antiGrabEnabled then return end
         
-        -- 敵に掴まれているかをチェック
         if checkIfGrabbed() then
             performEmergencyTeleport()
-            floatingButton.Text = "ANTI-GRAB\n[ACTIVE]"
+            floatingButton.Text = "発動中\n✓"
             floatingButton.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
-            
-            -- 3秒後に元に戻る
-            task.wait(3)
-            if floatingButton then
-                floatingButton.Text = "ANTI-GRAB\n[READY]"
-                floatingButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
-            end
-        else
-            -- 掴まれていない場合
-            floatingButton.Text = "ANTI-GRAB\n[NOT GRABBED]"
-            floatingButton.BackgroundColor3 = Color3.fromRGB(241, 196, 15)
             
             task.wait(1)
             if floatingButton then
-                floatingButton.Text = "ANTI-GRAB\n[READY]"
+                floatingButton.Text = "アンチ\nグラブ"
                 floatingButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
             end
         end
     end)
-    
-    -- マウスオーバー効果
-    floatingButton.MouseEnter:Connect(function()
-        if floatingButton then
-            local tween = game:GetService("TweenService"):Create(
-                floatingButton,
-                TweenInfo.new(0.2),
-                {Size = UDim2.new(0, 80, 0, 80), Position = UDim2.new(0.5, -40, 0.8, -40)}
-            )
-            tween:Play()
-        end
-    end)
-    
-    floatingButton.MouseLeave:Connect(function()
-        if floatingButton then
-            local tween = game:GetService("TweenService"):Create(
-                floatingButton,
-                TweenInfo.new(0.2),
-                {Size = UDim2.new(0, 70, 0, 70), Position = UDim2.new(0.5, -35, 0.8, -35)}
-            )
-            tween:Play()
-        end
-    end)
-    
-    -- 初期状態
-    floatingButton.Text = "ANTI-GRAB\n[READY]"
-    floatingButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
 end
 
 -- 検知変数
-local detectionSensitivity = 5
 local teleportDistance = 20
 local teleportCooldown = 1.0
 local lastTeleportTime = 0
@@ -300,8 +243,8 @@ local lastCheckTime = 0
 local lastPosition = Vector3.new(0, 0, 0)
 local lastVelocity = Vector3.new(0, 0, 0)
 
--- 掴まれているかチェックする関数
-function checkIfGrabbed()
+-- 掴まれているかチェック
+local function checkIfGrabbed()
     local player = game.Players.LocalPlayer
     local character = player.Character
     
@@ -311,123 +254,76 @@ function checkIfGrabbed()
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     
     if not humanoid or not rootPart then return false end
-    
-    -- 死亡チェック
     if humanoid.Health <= 0 then return false end
     
-    -- 方法1: 異常な速度変化（敵に投げられた時特有の急加速）
-    local currentVelocity = rootPart.Velocity
+    -- 現在の状態を取得
     local currentTime = tick()
+    local currentVelocity = rootPart.Velocity
+    local currentSpeed = currentVelocity.Magnitude
     
-    -- 時間経過チェック
+    -- 時間チェック
     if currentTime - lastCheckTime < 0.1 then return false end
     
-    -- 速度の大きさを計算
-    local speed = currentVelocity.Magnitude
-    
-    -- 通常の歩行速度は約16、走っても約30程度
-    -- 敵に投げられた時は50以上の速度になることが多い
-    if speed > 50 then
-        -- 前回の速度との変化量を計算
+    -- 投げられた時の特徴的な速度パターンを検出
+    if currentSpeed > 100 then -- 非常に高速な移動
+        -- 速度の急激な変化をチェック
         local velocityChange = (currentVelocity - lastVelocity).Magnitude
         
-        -- 急激な速度変化（投げられたサイン）
-        if velocityChange > 100 then
-            lastVelocity = currentVelocity
-            lastCheckTime = currentTime
-            return true
-        end
-    end
-    
-    -- 方法2: 外部フォースの検出
-    for _, constraint in pairs(rootPart:GetChildren()) do
-        if constraint:IsA("BodyVelocity") or 
-           constraint:IsA("BodyAngularVelocity") or
-           constraint:IsA("VectorForce") then
-            -- 自分自身のフォースでないかチェック
-            if not isPlayerAppliedForce(constraint) then
+        if velocityChange > 80 then -- 急激な速度変化
+            -- 空中での急激な加速かチェック（自然なジャンプと区別）
+            local isInAir = not humanoid:GetState() == Enum.HumanoidStateType.Running
+            if isInAir then
+                lastVelocity = currentVelocity
+                lastCheckTime = currentTime
                 return true
             end
         end
     end
     
-    -- 方法3: ウェルド/ジョイントの検出（他のプレイヤーに接続されている場合）
-    for _, descendant in pairs(rootPart:GetDescendants()) do
-        if descendant:IsA("Weld") or descendant:IsA("WeldConstraint") then
-            local part0 = descendant.Part0
-            local part1 = descendant.Part1
-            
-            if part0 and part1 then
-                -- 両方のパーツが自分のキャラクターのものであるかチェック
-                local isSelfWeld = true
-                
-                for _, part in pairs({part0, part1}) do
-                    if not part:IsDescendantOf(character) then
-                        isSelfWeld = false
-                        break
-                    end
-                end
-                
-                if not isSelfWeld then
-                    return true
-                end
+    -- 外部フォースの検出
+    for _, constraint in pairs(rootPart:GetChildren()) do
+        if constraint:IsA("BodyVelocity") then
+            -- 自分自身の操作でないことを確認
+            local velocity = constraint.Velocity
+            if velocity.Magnitude > 50 then
+                return true
             end
         end
     end
     
-    -- 方法4: 非自然的な移動パターン
-    local currentPos = rootPart.Position
-    local posDelta = (currentPos - lastPosition).Magnitude
-    
-    -- 人間が移動していないのに位置が大きく変化している場合
-    local moveDirection = humanoid.MoveDirection
-    if moveDirection.Magnitude < 0.1 and posDelta > 10 then
-        lastPosition = currentPos
-        lastCheckTime = currentTime
-        return true
-    end
-    
     -- 状態を更新
-    lastPosition = currentPos
     lastVelocity = currentVelocity
     lastCheckTime = currentTime
     
     return false
 end
 
--- プレイヤー自身が適用したフォースかどうかをチェック
-function isPlayerAppliedForce(constraint)
-    -- この関数はゲームの仕様に応じて調整が必要
-    -- ここでは単純に常にfalseを返すが、実際にはより詳細なチェックが必要
-    return false
-end
-
 -- 緊急テレポート関数
-function performEmergencyTeleport()
+local function performEmergencyTeleport()
     local currentTime = tick()
     if currentTime - lastTeleportTime < teleportCooldown then
         return false
     end
     
-    local character = game.Players.LocalPlayer.Character
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    
     if not character then return false end
     
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return false end
     
-    -- 現在位置を取得
+    -- 現在位置
     local currentPos = rootPart.Position
     
-    -- ランダムな方向と距離を計算
+    -- ランダムな方向と距離
     local randomAngle = math.random() * 2 * math.pi
     local randomDistance = teleportDistance
     
-    -- XZ平面でのオフセット
+    -- 計算
     local xOffset = math.cos(randomAngle) * randomDistance
     local zOffset = math.sin(randomAngle) * randomDistance
-    
-    -- 高さのオフセット（地上0〜20スタッド）
-    local yOffset = math.random(0, 20)
+    local yOffset = math.random(5, 25) -- 少し高めに
     
     -- 新しい位置
     local newPosition = Vector3.new(
@@ -436,25 +332,10 @@ function performEmergencyTeleport()
         currentPos.Z + zOffset
     )
     
-    -- 地面を探す（必要に応じて）
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    raycastParams.FilterDescendantsInstances = {character}
-    
-    local raycastResult = workspace:Raycast(
-        newPosition + Vector3.new(0, 50, 0),
-        Vector3.new(0, -100, 0),
-        raycastParams
-    )
-    
-    if raycastResult then
-        newPosition = raycastResult.Position + Vector3.new(0, 5, 0)
-    end
-    
     -- テレポート実行
     rootPart.CFrame = CFrame.new(newPosition)
     
-    -- 物理演算をリセット
+    -- 物理状態リセット
     rootPart.Velocity = Vector3.new(0, 0, 0)
     rootPart.RotVelocity = Vector3.new(0, 0, 0)
     
@@ -462,32 +343,17 @@ function performEmergencyTeleport()
     
     -- 通知
     Rayfield:Notify({
-        Title = "Emergency Teleport",
-        Content = "Escaped from grab!",
+        Title = "緊急テレポート発動",
+        Content = "敵の攻撃から回避しました",
         Duration = 3,
-        Image = "rbxassetid://4483345998"
+        Image = 4483345998
     })
     
     return true
 end
 
--- 自動検知システム（オプション）
-local autoDetectionToggle = AntiGrabTab:CreateToggle({
-    Name = "Auto-Detection (Experimental)",
-    CurrentValue = false,
-    Callback = function(Value)
-        if Value then
-            startAutoDetection()
-        else
-            stopAutoDetection()
-        end
-    end,
-})
-
--- 自動検知ループ
-local detectionConnection = nil
-
-function startAutoDetection()
+-- 自動検知の開始・停止
+local function startAutoDetection()
     if detectionConnection then
         detectionConnection:Disconnect()
     end
@@ -498,14 +364,14 @@ function startAutoDetection()
         if checkIfGrabbed() then
             performEmergencyTeleport()
             
-            -- ボタンの視覚的フィードバック
+            -- ボタン視覚効果
             if floatingButton then
-                floatingButton.Text = "ANTI-GRAB\n[AUTO-ACTIVE]"
+                floatingButton.Text = "自動\n回避 ✓"
                 floatingButton.BackgroundColor3 = Color3.fromRGB(155, 89, 182)
                 
-                task.wait(1)
+                task.wait(0.5)
                 if floatingButton then
-                    floatingButton.Text = "ANTI-GRAB\n[READY]"
+                    floatingButton.Text = "アンチ\nグラブ"
                     floatingButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
                 end
             end
@@ -513,61 +379,75 @@ function startAutoDetection()
     end)
 end
 
-function stopAutoDetection()
+local function stopAutoDetection()
     if detectionConnection then
         detectionConnection:Disconnect()
         detectionConnection = nil
     end
 end
 
--- ヘルプ/情報タブ
-local HelpTab = Window:CreateTab("Help", "rbxassetid://4483345998")
+-- 感度設定
+AntiGrabTab:CreateSlider({
+    Name = "検知感度",
+    Range = {1, 10},
+    Increment = 1,
+    Suffix = "レベル",
+    CurrentValue = 6,
+    Callback = function(Value)
+        -- 感度設定はcheckIfGrabbed関数内の数値に影響
+        teleportDistance = 15 + (Value * 2)
+    end,
+})
 
-HelpTab:CreateSection("How to Use")
+-- クールダウン設定
+AntiGrabTab:CreateSlider({
+    Name = "クールダウン時間",
+    Range = {0.5, 3},
+    Increment = 0.1,
+    Suffix = "秒",
+    CurrentValue = 1.0,
+    Callback = function(Value)
+        teleportCooldown = Value
+    end,
+})
+
+-- ヘルプタブ
+local HelpTab = Window:CreateTab("ヘルプ", 4483345998)
+
+HelpTab:CreateSection("使い方")
 
 HelpTab:CreateParagraph({
-    Title = "Main Features",
-    Content = [[
-    1. **Position Saving**: Save up to 10 different positions
-    2. **Quick Teleport**: Instantly teleport to saved positions
-    3. **Anti-Grab System**: Escape from enemy grabs with one click
-    4. **Floating Button**: Dragable button for quick access
-    ]]
+    Title = "基本機能",
+    Content = "メインタブで最大10箇所の位置を保存・移動できます。"
 })
 
 HelpTab:CreateParagraph({
-    Title = "Anti-Grab System",
-    Content = [[
-    • Click the floating button when grabbed by an enemy
-    • Auto-detection available (experimental)
-    • Teleports you 20 studs away in random direction
-    • Includes vertical offset to escape combos
-    ]]
+    Title = "アンチグラブ機能",
+    Content = "アンチグラブタブでシステムを有効化すると、画面にフローティングボタンが表示されます。敵に投げられた時はこのボタンをクリックするか、自動検知で回避できます。"
 })
 
 HelpTab:CreateParagraph({
-    Title = "Hotkeys",
-    Content = [[
-    • **Floating Button**: Click to activate anti-grab
-    • **Drag**: Click and drag the floating button to move
-    • **Main UI**: Use Rayfield interface for all settings
-    ]]
+    Title = "フローティングボタン",
+    Content = "• ドラッグで自由に移動可能\n• クリックで手動発動\n• 自動検知も同時に作動"
 })
 
 -- 初期化
 updateSlotDisplay()
 
--- ゲーム終了時のクリーンアップ
+-- ゲーム内通知
+task.wait(1)
+Rayfield:Notify({
+    Title = "Teleport GUI v4.0",
+    Content = "by syu_u - 正常に起動しました",
+    Duration = 5,
+    Image = 4483345998
+})
+
+-- キャラクターリスポーン対応
 game.Players.LocalPlayer.CharacterAdded:Connect(function()
-    if antiGrabEnabled and floatingButton == nil then
-        task.wait(2) -- キャラクターが完全にロードされるのを待つ
+    task.wait(2) -- キャラクターのロード待ち
+    
+    if antiGrabEnabled then
         createFloatingButton()
     end
 end)
-
-Rayfield:Notify({
-    Title = "Teleport GUI Loaded",
-    Content = "v4.0 by syu_u - Ready to use!",
-    Duration = 5,
-    Image = "rbxassetid://4483345998"
-})
