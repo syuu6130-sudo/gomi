@@ -1,290 +1,357 @@
--- Teleport GUI (by.miraitakesi_2022)
--- 改良版
+-- Teleport GUI v2.0
+-- By syu_u
+-- コンパクトで直感的なUI
 
-local player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- 既存のGUIを削除
-local oldGui = playerGui:FindFirstChild("CustomGui")
-if oldGui then
-    oldGui:Destroy()
-end
+local oldGui = playerGui:FindFirstChild("TeleportGUI")
+if oldGui then oldGui:Destroy() end
 
 -- メインGUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CustomGui"
+screenGui.Name = "TeleportGUI"
 screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
--- トップバー
-local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(0, 280, 0, 30) -- 少し大きく
-topBar.Position = UDim2.new(0.5, -140, 0.5, -120)
-topBar.BackgroundColor3 = Color3.fromRGB(60, 60, 70) -- よりモダンな色
-topBar.Active = true
-topBar.Draggable = true
-topBar.Parent = screenGui
-
--- 角丸を追加（オプション）
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 5)
-UICorner.Parent = topBar
-
--- タイトル
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -30, 1, 0)
-titleLabel.Position = UDim2.new(0, 10, 0, 0)
-titleLabel.BackgroundTransparency = 1
-titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-titleLabel.Text = "Teleport GUI (By miraitakesi)"
-titleLabel.TextColor3 = Color3.fromRGB(220, 220, 220) -- 明るい色
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 16
-titleLabel.Parent = topBar
-
--- トグルボタン
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 30, 0, 30)
-toggleButton.Position = UDim2.new(1, -30, 0, 0)
-toggleButton.Text = "-"
-toggleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
-toggleButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-toggleButton.Font = Enum.Font.GothamBold
-toggleButton.TextSize = 18
-local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(0, 5)
-toggleCorner.Parent = toggleButton
-toggleButton.Parent = topBar
-
--- メインフレーム
+-- コンパクトなメインフレーム
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 280, 0, 120) -- 高さを増加
-mainFrame.Position = UDim2.new(0, 0, 1, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
-mainFrame.Parent = topBar
+mainFrame.Size = UDim2.new(0, 180, 0, 45)
+mainFrame.Position = UDim2.new(0.5, -90, 0.05, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
 
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 5)
-mainCorner.Parent = mainFrame
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = mainFrame
 
--- 矢印ボタンと番号選択
-local numberControlFrame = Instance.new("Frame")
-numberControlFrame.Size = UDim2.new(1, -20, 0, 40)
-numberControlFrame.Position = UDim2.new(0, 10, 0, 10)
-numberControlFrame.BackgroundTransparency = 1
-numberControlFrame.Parent = mainFrame
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(60, 60, 70)
+UIStroke.Thickness = 2
+UIStroke.Parent = mainFrame
 
-local leftArrow = Instance.new("TextButton")
-leftArrow.Size = UDim2.new(0, 40, 0, 40)
-leftArrow.Position = UDim2.new(0, 0, 0, 0)
-leftArrow.Text = "◀"
-leftArrow.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
-leftArrow.TextColor3 = Color3.fromRGB(220, 220, 220)
-leftArrow.Font = Enum.Font.GothamBold
-leftArrow.TextSize = 20
-local leftCorner = Instance.new("UICorner")
-leftCorner.CornerRadius = UDim.new(0, 5)
-leftCorner.Parent = leftArrow
-leftArrow.Parent = numberControlFrame
+-- 番号表示と操作ボタン
+local numberDisplay = Instance.new("TextButton")
+numberDisplay.Size = UDim2.new(0, 40, 0, 40)
+numberDisplay.Position = UDim2.new(0, 5, 0, 2.5)
+numberDisplay.Text = "1"
+numberDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+numberDisplay.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+numberDisplay.AutoButtonColor = false
+numberDisplay.Font = Enum.Font.GothamBold
+numberDisplay.TextSize = 18
+numberDisplay.Parent = mainFrame
 
-local numberBox = Instance.new("TextBox")
-numberBox.Size = UDim2.new(0, 80, 0, 40)
-numberBox.Position = UDim2.new(0, 50, 0, 0)
-numberBox.Text = "1"
-numberBox.TextColor3 = Color3.fromRGB(220, 220, 220)
-numberBox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-numberBox.PlaceholderText = "1-10"
-numberBox.ClearTextOnFocus = false
-numberBox.TextScaled = true
-numberBox.Font = Enum.Font.GothamBold
-local boxCorner = Instance.new("UICorner")
-boxCorner.CornerRadius = UDim.new(0, 5)
-boxCorner.Parent = numberBox
-numberBox.Parent = numberControlFrame
+local numberCorner = Instance.new("UICorner")
+numberCorner.CornerRadius = UDim.new(0, 6)
+numberCorner.Parent = numberDisplay
 
-local rightArrow = Instance.new("TextButton")
-rightArrow.Size = UDim2.new(0, 40, 0, 40)
-rightArrow.Position = UDim2.new(0, 140, 0, 0)
-rightArrow.Text = "▶"
-rightArrow.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
-rightArrow.TextColor3 = Color3.fromRGB(220, 220, 220)
-rightArrow.Font = Enum.Font.GothamBold
-rightArrow.TextSize = 20
-local rightCorner = Instance.new("UICorner")
-rightCorner.CornerRadius = UDim.new(0, 5)
-rightCorner.Parent = rightArrow
-rightArrow.Parent = numberControlFrame
+local numberStroke = Instance.new("UIStroke")
+numberStroke.Color = Color3.fromRGB(80, 80, 90)
+numberStroke.Thickness = 1
+numberStroke.Parent = numberDisplay
 
-local savedLabel = Instance.new("TextLabel")
-savedLabel.Size = UDim2.new(0, 90, 0, 40)
-savedLabel.Position = UDim2.new(0, 190, 0, 0)
-savedLabel.BackgroundTransparency = 1
-savedLabel.TextXAlignment = Enum.TextXAlignment.Left
-savedLabel.Text = ""
-savedLabel.TextColor3 = Color3.fromRGB(46, 204, 113) -- 緑色で保存状態を示す
-savedLabel.Font = Enum.Font.Gotham
-savedLabel.TextSize = 14
-savedLabel.Parent = numberControlFrame
+-- ボタン群
+local buttonContainer = Instance.new("Frame")
+buttonContainer.Size = UDim2.new(0, 125, 0, 40)
+buttonContainer.Position = UDim2.new(0, 50, 0, 2.5)
+buttonContainer.BackgroundTransparency = 1
+buttonContainer.Parent = mainFrame
 
--- ボタンフレーム
-local buttonFrame = Instance.new("Frame")
-buttonFrame.Size = UDim2.new(1, -20, 0, 40)
-buttonFrame.Position = UDim2.new(0, 10, 0, 70)
-buttonFrame.BackgroundTransparency = 1
-buttonFrame.Parent = mainFrame
+local buttonLayout = Instance.new("UIGridLayout")
+buttonContainer:ClearAllChildren()
+buttonLayout.CellPadding = UDim2.new(0, 5, 0, 0)
+buttonLayout.CellSize = UDim2.new(0.33, -4, 1, 0)
+buttonLayout.FillDirection = Enum.FillDirection.Horizontal
+buttonLayout.Parent = buttonContainer
 
-local function createButton(name, position)
+-- ボタン作成関数
+local function createButton(text, color)
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0.32, -5, 1, 0)
-    button.Position = position
-    button.Text = name
-    button.BackgroundColor3 = Color3.fromRGB(52, 152, 219) -- 青色
+    button.Text = text
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.BackgroundColor3 = color
     button.Font = Enum.Font.GothamBold
-    button.TextSize = 14
-    local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 5)
-    buttonCorner.Parent = button
-    button.Parent = buttonFrame
+    button.TextSize = 12
+    button.AutoButtonColor = false
+    button.Parent = buttonContainer
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = button
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color:lerp(Color3.new(0, 0, 0), 0.3)
+    stroke.Thickness = 1
+    stroke.Parent = button
+    
     return button
 end
 
-local setButton = createButton("保存", UDim2.new(0, 0, 0, 0))
-local deleteButton = createButton("削除", UDim2.new(0.34, 0, 0, 0))
-local tpButton = createButton("テレポート", UDim2.new(0.68, 0, 0, 0))
+-- ボタン作成
+local saveBtn = createButton("SAVE", Color3.fromRGB(46, 204, 113))
+local delBtn = createButton("DEL", Color3.fromRGB(231, 76, 60))
+local tpBtn = createButton("TP", Color3.fromRGB(52, 152, 219))
 
--- データ保存
+-- 右クリックメニュー（番号選択用）
+local rightClickMenu = Instance.new("Frame")
+rightClickMenu.Size = UDim2.new(0, 160, 0, 0)
+rightClickMenu.Position = UDim2.new(0, 0, 1, 5)
+rightClickMenu.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+rightClickMenu.Visible = false
+rightClickMenu.Parent = numberDisplay
+
+local menuCorner = Instance.new("UICorner")
+menuCorner.CornerRadius = UDim.new(0, 8)
+menuCorner.Parent = rightClickMenu
+
+local menuStroke = Instance.new("UIStroke")
+menuStroke.Color = Color3.fromRGB(60, 60, 70)
+menuStroke.Thickness = 2
+menuStroke.Parent = rightClickMenu
+
+local menuLayout = Instance.new("UIGridLayout")
+menuLayout.CellPadding = UDim2.new(0, 5, 0, 5)
+menuLayout.CellSize = UDim2.new(0, 30, 0, 30)
+menuLayout.FillDirection = Enum.FillDirection.Horizontal
+menuLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+menuLayout.Parent = rightClickMenu
+
+-- メニューアイテム作成
+local menuItems = {}
+for i = 1, 10 do
+    local item = Instance.new("TextButton")
+    item.Text = tostring(i)
+    item.Size = UDim2.new(0, 30, 0, 30)
+    item.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    item.TextColor3 = Color3.fromRGB(255, 255, 255)
+    item.Font = Enum.Font.GothamBold
+    item.TextSize = 14
+    item.Parent = rightClickMenu
+    
+    local itemCorner = Instance.new("UICorner")
+    itemCorner.CornerRadius = UDim.new(0, 6)
+    itemCorner.Parent = item
+    
+    menuItems[i] = item
+end
+
+-- データ
 local savedPositions = {}
 local currentNumber = 1
 
--- 番号表示の更新
-local function updateNumberDisplay()
-    numberBox.Text = tostring(currentNumber)
+-- アニメーション関数
+local function tweenColor(obj, property, targetColor)
+    local tween = TweenService:Create(obj, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        [property] = targetColor
+    })
+    tween:Play()
+end
+
+-- 番号表示更新
+local function updateDisplay()
+    numberDisplay.Text = tostring(currentNumber)
+    
     if savedPositions[currentNumber] then
-        savedLabel.Text = "✓ 保存済み"
-        savedLabel.TextColor3 = Color3.fromRGB(46, 204, 113) -- 緑
+        numberDisplay.BackgroundColor3 = Color3.fromRGB(46, 204, 113) -- 緑
     else
-        savedLabel.Text = "未保存"
-        savedLabel.TextColor3 = Color3.fromRGB(220, 220, 220) -- 白
+        numberDisplay.BackgroundColor3 = Color3.fromRGB(50, 50, 60) -- デフォルト
+    end
+    
+    -- メニューアイテムの色も更新
+    for i, item in ipairs(menuItems) do
+        if savedPositions[i] then
+            item.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+        else
+            item.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+        end
     end
 end
 
--- 有効な番号かチェック
-local function isValidNumber(num)
-    return num and num >= 1 and num <= 10 and math.floor(num) == num
-end
-
--- キャラクターが有効かチェック
-local function isValidCharacter()
-    local character = player.Character
-    return character and character:FindFirstChild("HumanoidRootPart") and character.Humanoid.Health > 0
-end
-
--- 左矢印クリック
-leftArrow.MouseButton1Click:Connect(function()
-    currentNumber = (currentNumber == 1) and 10 or (currentNumber - 1)
-    updateNumberDisplay()
-end)
-
--- 右矢印クリック
-rightArrow.MouseButton1Click:Connect(function()
-    currentNumber = (currentNumber == 10) and 1 or (currentNumber + 1)
-    updateNumberDisplay()
-end)
-
--- 番号ボックス変更
-numberBox.FocusLost:Connect(function(enterPressed)
-    local num = tonumber(numberBox.Text)
-    if isValidNumber(num) then
-        currentNumber = num
-    else
-        currentNumber = 1
-        -- エラーメッセージ表示（簡易的）
-        numberBox.Text = "1-10のみ"
-        task.wait(0.5)
+-- 番号選択（右クリックメニュー）
+numberDisplay.MouseButton2Click:Connect(function()
+    rightClickMenu.Visible = not rightClickMenu.Visible
+    if rightClickMenu.Visible then
+        rightClickMenu.Size = UDim2.new(0, 160, 0, 80)
     end
-    updateNumberDisplay()
 end)
 
--- 保存ボタン
-setButton.MouseButton1Click:Connect(function()
-    if isValidCharacter() then
+-- メニュー外クリックで閉じる
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if rightClickMenu.Visible then
+            local mousePos = UserInputService:GetMouseLocation()
+            local absPos = rightClickMenu.AbsolutePosition
+            local absSize = rightClickMenu.AbsoluteSize
+            
+            if not (mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
+                   mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y) then
+                rightClickMenu.Visible = false
+            end
+        end
+    end
+end)
+
+-- メニューアイテムクリック
+for i, item in ipairs(menuItems) do
+    item.MouseButton1Click:Connect(function()
+        currentNumber = i
+        updateDisplay()
+        rightClickMenu.Visible = false
+    end)
+end
+
+-- ホイールで番号変更
+numberDisplay.MouseWheelForward:Connect(function()
+    currentNumber = (currentNumber % 10) + 1
+    updateDisplay()
+end)
+
+numberDisplay.MouseWheelBackward:Connect(function()
+    currentNumber = currentNumber == 1 and 10 or currentNumber - 1
+    updateDisplay()
+end)
+
+-- ボタン操作
+local function characterValid()
+    local char = player.Character
+    return char and char:FindFirstChild("HumanoidRootPart") and char.Humanoid.Health > 0
+end
+
+-- 保存
+saveBtn.MouseEnter:Connect(function()
+    tweenColor(saveBtn, "BackgroundColor3", Color3.fromRGB(56, 214, 123))
+end)
+
+saveBtn.MouseLeave:Connect(function()
+    tweenColor(saveBtn, "BackgroundColor3", Color3.fromRGB(46, 204, 113))
+end)
+
+saveBtn.MouseButton1Click:Connect(function()
+    if characterValid() then
         savedPositions[currentNumber] = player.Character.HumanoidRootPart.CFrame
-        updateNumberDisplay()
         
         -- 視覚的フィードバック
-        setButton.Text = "✓"
-        setButton.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
-        task.wait(0.3)
-        setButton.Text = "保存"
-        setButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
-    else
-        warn("キャラクターが無効です")
+        tweenColor(numberDisplay, "BackgroundColor3", Color3.fromRGB(86, 244, 153))
+        task.wait(0.1)
+        updateDisplay()
+        
+        -- 通知音（オプション）
+        if game:GetService("SoundService").RespectFilteringEnabled then
+            local sound = Instance.new("Sound")
+            sound.SoundId = "rbxassetid://3570576881" -- 保存成功音
+            sound.Volume = 0.3
+            sound.Parent = game.Workspace
+            sound:Play()
+            game.Debris:AddItem(sound, 2)
+        end
     end
 end)
 
--- 削除ボタン
-deleteButton.MouseButton1Click:Connect(function()
+-- 削除
+delBtn.MouseEnter:Connect(function()
+    tweenColor(delBtn, "BackgroundColor3", Color3.fromRGB(241, 96, 80))
+end)
+
+delBtn.MouseLeave:Connect(function()
+    tweenColor(delBtn, "BackgroundColor3", Color3.fromRGB(231, 76, 60))
+end)
+
+delBtn.MouseButton1Click:Connect(function()
     savedPositions[currentNumber] = nil
-    updateNumberDisplay()
+    updateDisplay()
     
     -- 視覚的フィードバック
-    deleteButton.Text = "✓"
-    deleteButton.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
-    task.wait(0.3)
-    deleteButton.Text = "削除"
-    deleteButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
+    tweenColor(numberDisplay, "BackgroundColor3", Color3.fromRGB(231, 76, 60))
+    task.wait(0.1)
+    updateDisplay()
 end)
 
--- テレポートボタン
-tpButton.MouseButton1Click:Connect(function()
-    if savedPositions[currentNumber] and isValidCharacter() then
-        local position = savedPositions[currentNumber]
-        
-        -- テレポート実行
-        player.Character.HumanoidRootPart.CFrame = position
+-- テレポート
+tpBtn.MouseEnter:Connect(function()
+    tweenColor(tpBtn, "BackgroundColor3", Color3.fromRGB(62, 172, 239))
+end)
+
+tpBtn.MouseLeave:Connect(function()
+    tweenColor(tpBtn, "BackgroundColor3", Color3.fromRGB(52, 152, 219))
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+    if savedPositions[currentNumber] and characterValid() then
+        player.Character.HumanoidRootPart.CFrame = savedPositions[currentNumber]
         
         -- 視覚的フィードバック
-        tpButton.Text = "✓"
-        tpButton.BackgroundColor3 = Color3.fromRGB(155, 89, 182)
-        task.wait(0.3)
-        tpButton.Text = "テレポート"
-        tpButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
-    else
-        warn("保存された位置がないか、キャラクターが無効です")
+        tweenColor(numberDisplay, "BackgroundColor3", Color3.fromRGB(142, 202, 255))
+        task.wait(0.1)
+        updateDisplay()
     end
 end)
 
--- トグルボタン
-local isHidden = false
-toggleButton.MouseButton1Click:Connect(function()
-    isHidden = not isHidden
-    mainFrame.Visible = not isHidden
-    toggleButton.Text = isHidden and "+" or "-"
-    
-    -- トグル時のアニメーション効果
-    toggleButton.BackgroundColor3 = isHidden and 
-        Color3.fromRGB(90, 90, 100) or 
-        Color3.fromRGB(80, 80, 90)
-end)
-
--- 初期化
-updateNumberDisplay()
-
--- 追加機能：キーボードショートカット（オプション）
-local UserInputService = game:GetService("UserInputService")
+-- キーボードショートカット
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    if input.KeyCode == Enum.KeyCode.RightBracket then
-        -- 次の番号へ
-        currentNumber = (currentNumber == 10) and 1 or (currentNumber + 1)
-        updateNumberDisplay()
-    elseif input.KeyCode == Enum.KeyCode.LeftBracket then
-        -- 前の番号へ
-        currentNumber = (currentNumber == 1) and 10 or (currentNumber - 1)
-        updateNumberDisplay()
+    if input.KeyCode == Enum.KeyCode.Q then
+        currentNumber = currentNumber == 1 and 10 or currentNumber - 1
+        updateDisplay()
+    elseif input.KeyCode == Enum.KeyCode.E then
+        currentNumber = (currentNumber % 10) + 1
+        updateDisplay()
+    elseif input.KeyCode == Enum.KeyCode.One then
+        currentNumber = 1
+        updateDisplay()
+    elseif input.KeyCode == Enum.KeyCode.Two then
+        currentNumber = 2
+        updateDisplay()
+    elseif input.KeyCode == Enum.KeyCode.Three then
+        currentNumber = 3
+        updateDisplay()
+    elseif input.KeyCode == Enum.KeyCode.Four then
+        currentNumber = 4
+        updateDisplay()
+    elseif input.KeyCode == Enum.KeyCode.Five then
+        currentNumber = 5
+        updateDisplay()
     end
 end)
 
-print("Teleport GUI loaded! By miraitakesi_2022")
+-- ダブルクリックでGUIを隠す/表示
+local lastClickTime = 0
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local currentTime = tick()
+        if currentTime - lastClickTime < 0.3 then
+            mainFrame.Visible = not mainFrame.Visible
+        end
+        lastClickTime = currentTime
+    end
+end)
+
+-- 初期化
+updateDisplay()
+
+-- 追加：マウスオーバーで影
+mainFrame.MouseEnter:Connect(function()
+    tweenColor(UIStroke, "Color", Color3.fromRGB(80, 80, 90))
+end)
+
+mainFrame.MouseLeave:Connect(function()
+    tweenColor(UIStroke, "Color", Color3.fromRGB(60, 60, 70))
+end)
+
+print("Teleport GUI v2.0 loaded | By syu_u")
+print("Controls:")
+print("  Drag: Move GUI")
+print("  Double-click: Hide/Show")
+print("  Mouse wheel on number: Change slot")
+print("  Right-click on number: Quick select")
+print("  Q/E: Previous/Next slot")
+print("  1-5: Quick slot select")
